@@ -7,7 +7,7 @@ const typeCheckMap = {
     string: (val: any) => typeof val === "string",
     number: (val: any) => typeof val === "number",
     boolean: (val: any) => typeof val === "boolean",
-  };
+};
 
 export const createTrackingPlan = async (req: Request, res: Response) => {
   const { name, description, events } = req.body;
@@ -225,5 +225,5 @@ export const validateEventPayload = async (req: Request, res: Response) => {
     } catch (err) {
       return res.status(500).json({ message: "Server error", error: err });
     }
-  };
+};
   

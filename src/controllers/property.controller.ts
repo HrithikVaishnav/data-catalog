@@ -1,14 +1,13 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
+import { ValidPropertyTypes } from "../utils/constant";
 
-const VALID_TYPES = ["string", "number", "boolean"];
 
 export const createProperty = async (req: Request, res: Response) => {
     try {
       const { name, type, description, validationRules } = req.body;
   
-      const VALID_TYPES = ["string", "number", "boolean"];
-      if (!VALID_TYPES.includes(type)) {
+      if (!ValidPropertyTypes.includes(type)) {
         return res.status(400).json({ message: "Invalid property type." });
       }
   

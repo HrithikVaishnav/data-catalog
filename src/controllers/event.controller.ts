@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
+import { ValidEventTypes } from "../utils/constant";
 
 export const createEvent = async (req: Request, res: Response) => {
   try {
     const { name, type, description } = req.body;
 
     // Validate event type
-    const validTypes = ["track", "identify", "alias", "screen", "page"];
-    if (!validTypes.includes(type)) {
+    if (!ValidEventTypes.includes(type)) {
       return res.status(400).json({ message: "Invalid event type." });
     }
 
