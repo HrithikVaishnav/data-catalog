@@ -47,6 +47,28 @@ PORT=4000
 
 ---
 
+## 🐳 Running with Docker
+
+### Prerequisites
+- Docker and Docker Compose installed
+
+### 🔧 Using Docker Compose (Recommended)
+create a .env.docker file with below details 
+```
+PORT=4000
+POSTGRES_USER=<username>
+POSTGRES_PASSWORD=<password>
+POSTGRES_DB=data_catalog
+DATABASE_URL=postgresql://<username>:<password>@db:5432/data_catalog?schema=public
+
+```
+This will spin up both the **PostgreSQL** database and the **backend** service.
+
+```bash
+docker-compose up --build
+```
+---
+
 ## Scripts
 
 | Command         | Purpose                      |
