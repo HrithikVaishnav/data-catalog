@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventType {
+  track
+  identify
+  alias
+  screen
+  page
+}
+
+enum PropertyType {
+  string
+  number
+  boolean
+}
+
+model Event {
+  id          String         @id @default(uuid())
+  name        String
+  type        EventType
+  description String
+  createTime  DateTime       @default(now())
+  updateTime  DateTime       @updatedAt
+
+  eventProperties EventProperty[]
+  trackingPlanEvents TrackingPlanEvent[]
+
+  @@unique([name, type])
+}
+
+model Property {
+  id          String         @id @default(uuid())
+  name        String
+  type        PropertyType
+  description String
+  validationRules Json?      // Optional JSON field
+  createTime  DateTime       @default(now())
+  updateTime  DateTime       @updatedAt
+
+  eventProperties EventProperty[]
+
+  @@unique([name, type])
+}
+
+model TrackingPlan {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  description String?
+  createTime  DateTime       @default(now())
+  updateTime  DateTime       @updatedAt
+
+  trackingPlanEvents TrackingPlanEvent[]
+}
+
+model TrackingPlanEvent {
+  id                String   @id @default(uuid())
+  trackingPlan      TrackingPlan @relation(fields: [trackingPlanId], references: [id])
+  trackingPlanId    String
+
+  event             Event    @relation(fields: [eventId], references: [id])
+  eventId           String
+
+  additionalProperties Boolean
+}
+
+model EventProperty {
+  id         String   @id @default(uuid())
+  event      Event    @relation(fields: [eventId], references: [id])
+  eventId    String
+
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+
+  required   Boolean
+}
