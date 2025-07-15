@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../prismaClient";
 import { z } from "zod";
+import { upsertEventsAndProperties } from "../services/trackingPlan.service";
 
 // Helper function to get JS types from property.type
 const typeCheckMap = {
@@ -13,85 +14,23 @@ export const createTrackingPlan = async (req: Request, res: Response) => {
   const { name, description, events } = req.body;
 
   try {
-    // Check for duplicate plan name
-    const existingPlan = await prisma.trackingPlan.findUnique({ where: { name } });
-    if (existingPlan) {
+    const existing = await prisma.trackingPlan.findUnique({ where: { name } });
+    if (existing) {
       return res.status(409).json({ message: "TrackingPlan with this name already exists" });
     }
 
-    // Create the tracking plan
     const trackingPlan = await prisma.trackingPlan.create({
-      data: {
-        name,
-        description,
-      },
+      data: { name, description },
     });
 
-    // For each event in the tracking plan
-    for (const event of events) {
-      const { name: eventName, type, description: eventDesc, properties, additionalProperties } = event;
+    await upsertEventsAndProperties({ trackingPlanId: trackingPlan.id, events });
 
-      // Check if event exists
-      let existingEvent = await prisma.event.findFirst({ where: { name: eventName, type } });
-
-      if (existingEvent) {
-        if (existingEvent.description !== eventDesc) {
-          return res.status(409).json({
-            message: `Event '${eventName}' of type '${type}' already exists with a different description.`,
-          });
-        }
-      } else {
-        // Create the event
-        existingEvent = await prisma.event.create({
-          data: { name: eventName, type, description: eventDesc },
-        });
-      }
-
-      // Link the event to the tracking plan
-      await prisma.trackingPlanEvent.create({
-        data: {
-          trackingPlanId: trackingPlan.id,
-          eventId: existingEvent.id,
-          additionalProperties,
-        },
-      });
-
-      // For each property in the event
-      for (const prop of properties) {
-        const { name: propName, type: propType, description: propDesc, required } = prop;
-
-        let existingProperty = await prisma.property.findFirst({ where: { name: propName, type: propType } });
-
-        if (existingProperty) {
-          if (existingProperty.description !== propDesc) {
-            return res.status(409).json({
-              message: `Property '${propName}' of type '${propType}' already exists with a different description.`,
-            });
-          }
-        } else {
-          // Create the property
-          existingProperty = await prisma.property.create({
-            data: { name: propName, type: propType, description: propDesc },
-          });
-        }
-
-        // Link property to event
-        await prisma.eventProperty.create({
-          data: {
-            eventId: existingEvent.id,
-            propertyId: existingProperty.id,
-            required,
-          },
-        });
-      }
-    }
-
-    return res.status(201).json({ message: "Tracking plan created successfully", trackingPlanId: trackingPlan.id });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Internal server error", error });
+    return res.status(201).json({ message: "Tracking plan created", trackingPlanId: trackingPlan.id });
+  } catch (err) {
+    return res.status(500).json({ message: "Server error", error: err });
   }
 };
+
 
 export const getAllTrackingPlans = async (_: Request, res: Response) => {
   try {
@@ -118,6 +57,70 @@ export const getAllTrackingPlans = async (_: Request, res: Response) => {
     return res.status(500).json({ message: "Server error", error });
   }
 };
+
+export const getTrackingPlanById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const plan = await prisma.trackingPlan.findUnique({
+      where: { id },
+      include: {
+        trackingPlanEvents: {
+          include: {
+            event: {
+              include: {
+                eventProperties: {
+                  include: { property: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!plan) return res.status(404).json({ message: "Tracking plan not found" });
+    res.json(plan);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+export const deleteTrackingPlan = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await prisma.trackingPlan.delete({ where: { id } });
+    res.json({ message: "Tracking plan deleted successfully" });
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "Tracking plan not found" });
+    }
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+export const updateTrackingPlan = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, description, events } = req.body;
+
+  try {
+    const trackingPlan = await prisma.trackingPlan.update({
+      where: { id },
+      data: { name, description },
+    });
+
+    if (events?.length > 0) {
+      await upsertEventsAndProperties({ trackingPlanId: trackingPlan.id, events });
+    }
+
+    return res.status(200).json({ message: "Tracking plan updated", trackingPlanId: trackingPlan.id });
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "Tracking plan not found" });
+    }
+    return res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
 
 export const validateEventPayload = async (req: Request, res: Response) => {
     const { planId } = req.params;

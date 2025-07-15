@@ -5,9 +5,10 @@ const router = express.Router();
 
 /**
  * @swagger
- * /tracking-plans:
+ * /api/tracking-plans:
  *   post:
  *     summary: Create a new tracking plan with events and properties
+ *     tags: [Tracking Plans]
  *     requestBody:
  *       required: true
  *       content:
@@ -26,20 +27,93 @@ router.post("/", TrackingPlanController.createTrackingPlan);
 
 /**
  * @swagger
- * /tracking-plans:
+ * /api/tracking-plans:
  *   get:
  *     summary: Get all tracking plans with events and properties
+ *     tags: [Tracking Plans]
  *     responses:
  *       200:
  *         description: List of tracking plans
  */
 router.get("/", TrackingPlanController.getAllTrackingPlans);
 
+// src/routes/trackingPlan.routes.ts
+
 /**
  * @swagger
- * /tracking-plans/{planId}/validate-event:
+ * /api/tracking-plans/{id}:
+ *   get:
+ *     summary: Get tracking plan by ID
+ *     tags: [Tracking Plans]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the tracking plan
+ *     responses:
+ *       200:
+ *         description: Tracking plan found
+ *       404:
+ *         description: Tracking plan not found
+ */
+router.get("/:id", TrackingPlanController.getTrackingPlanById);
+
+/**
+ * @swagger
+ * /api/tracking-plans/{id}:
+ *   delete:
+ *     summary: Delete a tracking plan
+ *     tags: [Tracking Plans]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Tracking plan deleted
+ *       404:
+ *         description: Tracking plan not found
+ */
+router.delete("/:id", TrackingPlanController.deleteTrackingPlan);
+
+/**
+ * @swagger
+ * /api/tracking-plans/{id}:
+ *   put:
+ *     summary: Update tracking plan (name, description, and events)
+ *     tags: [Tracking Plans]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             allOf:
+ *               - $ref: '#/components/schemas/TrackingPlanInput'
+ *     responses:
+ *       200:
+ *         description: Tracking plan updated
+ *       404:
+ *         description: Tracking plan not found
+ */
+router.put("/:id", TrackingPlanController.updateTrackingPlan);
+
+
+/**
+ * @swagger
+ * /api/tracking-plans/{planId}/validate-event:
  *   post:
  *     summary: Validate an event payload against a tracking plan
+ *     tags: [Tracking Plans]
  *     parameters:
  *       - in: path
  *         name: planId
