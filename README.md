@@ -78,6 +78,11 @@ PORT=4000
 
 Full API reference at: `http://localhost:4000/api-docs`
 
+## 🧭 Database Schema
+
+The following diagram shows how events, properties, and tracking plans are related in the system:
+
+<img width="871" height="884" alt="Image" src="https://github.com/user-attachments/assets/44417aa7-fd58-446f-869a-4ac9afdfd2bd" />
 
 ## Future Improvements
 
