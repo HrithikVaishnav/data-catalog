@@ -1,5 +1,8 @@
 import { componentsSchemas } from "./schemas";
 
+
+const isProd = process.env.NODE_ENV === "production";
+
 const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
@@ -16,7 +19,7 @@ const swaggerOptions = {
       schemas: componentsSchemas,
     },
   },
-  apis: ["./src/routes/**/*.ts"],
+  apis: [isProd ? "./dist/routes/**/*.js" : "./src/routes/**/*.ts"],
 };
 
 
